@@ -1,66 +1,29 @@
-import * as Hex from "./hex-utils.js";
-import * as Header from "./header.js";
+import { FileDialog } from "./file-dialog.js";
+import * as Canvas from "./canvas.js";
 
-class FileDialog {
-    constructor(id = "file-dialog") {
-        this.id = id;
+const open_button /* HTMLButtonElement */ = document.getElementById("open-button");
 
-        this.html_element = document.createElement("input");
-        this.html_element.type = "file";
-
-        this.html_element.accept = ".gsc";
-    }
-
-    open() {
-        this.html_element.click();
-    }
-
-    read(e) {
-        let loading_screen = document.getElementById("loading-screen");
-
-        if (loading_screen) {
-            loading_screen.style.display = "block";
-        } else {
-            console.warn("No loading screen found.");
-        }
-
-        var file = e.target.files[0];
-        if (!file) {
-            console.log("No file found");
-            return;
-        }
-
-        console.log(file);
-
-        var reader = new FileReader();
-        reader.readAsText(file);
-
-        reader.onload = function (e) {
-            var contents = e.target.result;
-
-            var content_array = Hex.strToInt(contents);
-
-            if (loading_screen) {
-                loading_screen.style.display = "none";
-            }
-
-            // Determine scene format (TCS or LIJ)
-            let leading_four = Hex.ASCIIFromRange(content_array, 0, 3);
-
-            Header.checkNU20Header(leading_four);
-            console.log(Header.SCENE_FORMAT);
-        };
-    }
+if (!open_button) {
+    console.warn("No open button found.");
 }
 
-let open_file_dialog = new FileDialog("open-dialog");
+open_button.onclick = function() {
+    var file_dialog /* FileDialog */ = new FileDialog(".gsc");
+    file_dialog.open();
+}
 
-open_file_dialog.html_element.addEventListener("input", function (e) {
-    open_file_dialog.read(e);
+export const canvas = new Canvas.CanvasRenderer("render-window");
+
+
+const box = new Canvas.Box(1, 1, 1, 0xffffff);
+canvas.add(box.mesh);
+
+const light = new Canvas.HemisphereLight(0xffffff, 0x000000, 5);
+canvas.add(light.light);
+
+canvas.renderer.setAnimationLoop(function() {
+    box.mesh.rotation.x += 0.01;
+    box.mesh.rotation.y += 0.01;
+
+    canvas.render();
 });
-
-let open_button = document.getElementById("open-button");
-
-open_button.onclick = function () {
-    open_file_dialog.open();
-};
